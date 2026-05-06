@@ -69,7 +69,7 @@ async def health() -> dict[str, str]:
 # Si le nom du service n'existe pas dans ROUTES, on retourne 404.
 @app.api_route(
     "/{service}/{path:path}",
-    methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 )
 async def proxy(service: str, path: str, request: Request) -> Response:
     # On vérifie si le nom du service est connu dans notre table ROUTES.

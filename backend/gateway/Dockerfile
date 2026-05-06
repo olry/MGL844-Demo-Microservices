@@ -12,8 +12,9 @@ COPY requirements.txt .
 # Installation des dépendances Python listées dans requirements.txt.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# On copie le code du gateway. Deux fichiers seulement : main.py et config.py.
-COPY gateway/main.py gateway/config.py ./
+# On copie tout le dossier gateway/ (main.py, config.py, plus tout
+# fichier ajoute plus tard).
+COPY gateway/ ./
 
 # Force Python à afficher les logs tout de suite (sans tampon).
 # Pratique pour voir les messages dans `docker compose logs`.

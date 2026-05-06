@@ -1,6 +1,6 @@
-// URL du gateway. Tous les appels passent par le port 8000.
-// Le gateway transfère ensuite vers le bon service interne.
-const GATEWAY = "http://localhost:8000";
+// L'URL du gateway est injectée par config.js, généré au démarrage
+// du conteneur depuis le .env à la racine. Voir config.template.js.
+const GATEWAY = window.GATEWAY;
 
 
 // Fonction utilitaire : appelle un endpoint GET et affiche la réponse.

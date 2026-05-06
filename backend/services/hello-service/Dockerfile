@@ -12,8 +12,8 @@ COPY requirements.txt .
 # Installation des dépendances Python listées dans requirements.txt.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# On copie tout le dossier app/ du hello-service dans le conteneur.
-COPY services/hello-service/app ./app
+# On copie tout le dossier hello_app/ du hello-service dans le conteneur.
+COPY services/hello-service/hello_app ./hello_app
 
 # Force Python à afficher les logs tout de suite (sans tampon).
 # Pratique pour voir les messages dans `docker compose logs`.
@@ -24,4 +24,4 @@ EXPOSE 8001
 
 # Commande lancée quand le conteneur démarre :
 # uvicorn est le serveur ASGI qui fait tourner FastAPI.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "hello_app.main:app", "--host", "0.0.0.0", "--port", "8001"]

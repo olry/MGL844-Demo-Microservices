@@ -33,7 +33,11 @@ package "hello-service" {
     + show(user_id : int) : UserGreeting
   }
 
-  class HelloLifespan {
+  class HelloHealth <<Controller>> {
+    + index() : dict
+  }
+
+  class HelloLifespan <<lifespan>> {
     + connect_nats()
     + create_tables()
   }
@@ -57,10 +61,17 @@ package "notification-service" {
     + index() : list<NotificationOut>
   }
 
-  class NotificationLifespan {
+  class NotifHealth <<Controller>> {
+    + index() : dict
+  }
+
+  class NotificationLifespan <<lifespan>> {
     + connect_nats()
     + subscribe(user.created)
-    + handle(msg) : creates Notification
+  }
+
+  class handle_user_created <<function>> {
+    + handle_user_created(msg) : creates Notification
   }
 }
 
@@ -81,12 +92,15 @@ UserController ..> UserGreeting : retourne
 
 NotificationController --> Notification : utilise
 NotificationController ..> NotificationOut : retourne
-NotificationLifespan --> Notification : cree
+handle_user_created --> Notification : cree
+NotificationLifespan ..> handle_user_created : abonne
 
 HelloLifespan --> User : create_all
 NotificationLifespan --> Notification : create_all
 
-Proxy ..> UserController : transfere /hello
-Proxy ..> NotificationController : transfere /notify
+Proxy ..> UserController : transfere /hello/*
+Proxy ..> NotificationController : transfere /notify/*
+Proxy ..> HelloHealth : transfere /hello/health
+Proxy ..> NotifHealth : transfere /notify/health
 
 @enduml

@@ -87,36 +87,26 @@ Images disponibles (toutes en `:latest` et `:sha-XXXXXXX`) :
 | NATS monitoring | <http://localhost:8222> |
 
 
-## Tester les endpoints en ligne de commande
+## Tester les endpoints
 
-Le gateway redirige `/<service>/...` vers le bon conteneur.
+Deux façons :
 
-```
-curl http://localhost:8000/hello/health
-```
-→ `{"status":"ok","name":"hello-service"}`
+**Option A : interface web** sur <http://localhost:3000> (bouton par endpoint).
 
-```
-curl http://localhost:8000/notify/health
-```
-→ `{"status":"ok","name":"notification-service"}`
+**Option B : Swagger UI** généré automatiquement par FastAPI pour chaque service.
+Tu vois la liste des routes, tu cliques "Try it out", tu remplis le corps,
+tu cliques "Execute".
 
-Créer un utilisateur (PowerShell sur Windows) :
-```
-curl -X POST -H "Content-Type: application/json" -d "{\"name\":\"Alice\"}" http://localhost:8000/hello/users
-```
-macOS / Linux :
-```
-curl -X POST -H "Content-Type: application/json" -d '{"name":"Alice"}' http://localhost:8000/hello/users
-```
-→ `{"id":1,"name":"Alice","created_at":"..."}`
+| Service              | Swagger UI                          |
+|----------------------|-------------------------------------|
+| hello-service        | <http://localhost:8001/docs>        |
+| notification-service | <http://localhost:8002/docs>        |
 
-Récupérer l'utilisateur, lister tout, voir la notification déclenchée :
-```
-curl http://localhost:8000/hello/users/1
-curl http://localhost:8000/hello/users
-curl http://localhost:8000/notify/notifications
-```
+Parcours typique pour voir l'événement NATS en action :
+
+1. Sur Swagger hello : `POST /users` avec `{"name": "Alice"}`. Réponse 201.
+2. Sur Swagger notify : `GET /notifications`. La liste contient
+   `Bonjour Alice ! (id=1)` (publié par hello sur NATS, consommé par notify).
 
 
 ## Lancer les tests
@@ -155,7 +145,7 @@ Le rapport de couverture s'affiche automatiquement après les tests unitaires.
 
 | Erreur | Cause | Solution |
 |--------|-------|----------|
-| `error while interpolating ... must be set in .env` | pas de fichier `.env` | refaire `copy .env.example .env` |
+| `error while interpolating ... must be set in .env` | pas de fichier `.env` | refaire `copy .env.example .env` (Windows) ou `cp .env.example .env` (macOS/Linux) |
 | `Bind for 0.0.0.0:8000 failed` | port 8000 déjà pris | changer `GATEWAY_PORT` dans `.env` |
 | Port 3000 déjà pris | autre app utilise 3000 | changer `FRONTEND_PORT` dans `.env` |
 | `nats` reste `unhealthy` | port 4222 déjà pris | redémarrer Docker Desktop, vérifier qu'aucun autre NATS ne tourne |

@@ -7,12 +7,11 @@ from contextlib import asynccontextmanager
 import nats
 from fastapi import FastAPI
 
-from app.config import settings
-from app.controllers import health, user
-from app.database import Base, engine
-# On importe le module User pour que SQLAlchemy connaisse la table "users"
-# avant que create_all() ne crée les tables au démarrage.
-from app.models import user as _user_model
+from hello_app.config import settings
+from hello_app.controllers import health, user
+from hello_app.database import Base, engine
+# Note : la table "users" est connue de SQLAlchemy parce que le module
+# hello_app.models.user est importe en chaine via hello_app.controllers.user.
 
 
 # Lifespan : code qui tourne au démarrage et à l'arrêt du service.

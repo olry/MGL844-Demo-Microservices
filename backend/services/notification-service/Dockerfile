@@ -12,8 +12,8 @@ COPY requirements.txt .
 # Installation des dépendances Python listées dans requirements.txt.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# On copie tout le dossier app/ du notification-service dans le conteneur.
-COPY services/notification-service/app ./app
+# On copie tout le dossier notif_app/ du notification-service dans le conteneur.
+COPY services/notification-service/notif_app ./notif_app
 
 # Force Python à afficher les logs tout de suite (sans tampon).
 ENV PYTHONUNBUFFERED=1
@@ -23,4 +23,4 @@ EXPOSE 8002
 
 # Commande lancée quand le conteneur démarre :
 # uvicorn est le serveur ASGI qui fait tourner FastAPI.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "notif_app.main:app", "--host", "0.0.0.0", "--port", "8002"]

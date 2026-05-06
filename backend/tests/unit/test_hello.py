@@ -9,9 +9,8 @@ import pytest_asyncio
 from fastapi import FastAPI, HTTPException
 from httpx import ASGITransport, AsyncClient
 
-from app.controllers import health, user
-from app.database import Base, engine
-from app.models import user as _user_model
+from hello_app.controllers import health, user
+from hello_app.database import Base, engine
 
 
 # Fixture : prépare une mini application FastAPI propre pour chaque test.
@@ -87,7 +86,7 @@ async def test_get_user_404(client):
 # Test du modèle User : la méthode greet() retourne la phrase attendue.
 # Pas besoin de base de données ici, on teste juste la classe Python.
 def test_user_model_greet():
-    from app.models.user import User
+    from hello_app.models.user import User
     assert User(name="World").greet() == "Bonjour World !"
 
 
@@ -95,8 +94,8 @@ def test_user_model_greet():
 # On teste create_user, get_user et list_users avec une vraie session SQLite.
 @pytest.mark.asyncio
 async def test_model_functions_direct():
-    from app.database import SessionLocal
-    from app.models.user import create_user, get_user, list_users
+    from hello_app.database import SessionLocal
+    from hello_app.models.user import create_user, get_user, list_users
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -121,9 +120,9 @@ async def test_model_functions_direct():
 # On vérifie create (avec publish NATS), index, show et show 404.
 @pytest.mark.asyncio
 async def test_controller_functions_direct():
-    from app.controllers.user import create, index, show
-    from app.database import SessionLocal
-    from app.views.user import UserCreate
+    from hello_app.controllers.user import create, index, show
+    from hello_app.database import SessionLocal
+    from hello_app.views.user import UserCreate
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -157,12 +156,12 @@ async def test_controller_functions_direct():
 # 3. à la sortie, appeler drain() puis dispose().
 @pytest.mark.asyncio
 async def test_lifespan_starts_and_stops():
-    from app.main import lifespan
+    from hello_app.main import lifespan
 
     fake_nc = AsyncMock()
     test_app = FastAPI()
 
-    with patch("app.main.nats.connect", new=AsyncMock(return_value=fake_nc)):
+    with patch("hello_app.main.nats.connect", new=AsyncMock(return_value=fake_nc)):
         async with lifespan(test_app):
             assert test_app.state.nats is fake_nc
         fake_nc.drain.assert_awaited_once()

@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, Integer, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database import Base
+from hello_app.database import Base
 
 
 # Représentation Python de la table SQL "users".

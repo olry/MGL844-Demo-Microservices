@@ -7,9 +7,9 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
-from app.models.user import create_user, get_user, list_users
-from app.views.user import UserCreate, UserGreeting, UserOut
+from hello_app.database import get_db
+from hello_app.models.user import create_user, get_user, list_users
+from hello_app.views.user import UserCreate, UserGreeting, UserOut
 
 # Toutes les routes de ce fichier commencent par /users.
 router = APIRouter(prefix="/users", tags=["users"])

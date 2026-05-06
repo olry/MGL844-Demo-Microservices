@@ -7,8 +7,9 @@
 </head>
 <body>
   <h1>MGL844 - Démo Microservices</h1>
-  <p>Interface simple pour tester les endpoints du gateway. Tous les appels
-  passent par <code>http://localhost:8000</code>.</p>
+  <p>Interface simple pour tester les endpoints du gateway.
+  L'URL utilisée est lue depuis le <code>.env</code> à la racine
+  (variable <code>GATEWAY_PORT</code>).</p>
 
   <!-- Santé des services : on vérifie que les routes /health répondent. -->
   <section>
@@ -48,6 +49,8 @@
     <pre id="notif-out"></pre>
   </section>
 
+  <!-- config.js doit être chargé en premier : il définit window.GATEWAY. -->
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

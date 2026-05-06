@@ -7,23 +7,23 @@ skinparam ranksep 60
 
 rectangle "Hote Docker (docker-compose)" as Host {
 
-  node "frontend\n(port 3000)" as Frontend {
+  node "frontend\n(host 3000 -> 80)" as Frontend {
     [nginx]
   }
 
-  node "gateway\n(port 8000)" as Gateway {
+  node "gateway\n(host 8000 -> 8000)" as Gateway {
     [FastAPI Proxy]
   }
 
-  node "hello-service\n(port 8001)" as Hello {
+  node "hello-service\n(host 8001 -> 8001)" as Hello {
     [FastAPI hello]
   }
 
-  node "notification-service\n(port 8002)" as Notif {
+  node "notification-service\n(host 8002 -> 8002)" as Notif {
     [FastAPI notification]
   }
 
-  queue "nats\n(port 4222, monitor 8222)" as NATS
+  queue "nats\n(host 4222 -> 4222, monitor 8222)" as NATS
 
   database "hello_data\n(volume)\nSQLite hello.db" as DBH
   database "notif_data\n(volume)\nSQLite notifications.db" as DBN

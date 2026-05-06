@@ -4,9 +4,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
-from app.models.notification import list_notifications
-from app.views.notification import NotificationOut
+from notif_app.database import get_db
+from notif_app.models.notification import list_notifications
+from notif_app.views.notification import NotificationOut
 
 # Toutes les routes de ce fichier commencent par /notifications.
 router = APIRouter(prefix="/notifications", tags=["notifications"])

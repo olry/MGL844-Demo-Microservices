@@ -98,6 +98,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
+    env_file: .env
     ports:
       - "${FRONTEND_PORT:?must be set in .env}:80"
     networks:
@@ -105,3 +106,8 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:80/ > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

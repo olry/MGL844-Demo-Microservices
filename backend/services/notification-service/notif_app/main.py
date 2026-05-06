@@ -9,16 +9,27 @@ from contextlib import asynccontextmanager
 import nats
 from fastapi import FastAPI
 
-from app.config import settings
-from app.controllers import health, notification
-from app.database import Base, SessionLocal, engine
-from app.models.notification import create_notification
+from notif_app.config import settings
+from notif_app.controllers import health, notification
+from notif_app.database import Base, SessionLocal, engine
+from notif_app.models.notification import create_notification
+
+
+# Fonction appelée par NATS à chaque message reçu sur "user.created".
+# msg.data contient les bytes envoyés par hello-service (un JSON utf-8).
+# Elle est isolée au niveau module pour pouvoir être testée en unitaire
+# sans avoir besoin d'un vrai serveur NATS.
+async def handle_user_created(msg) -> None:
+    data = json.loads(msg.data)
+    message = f"Bonjour {data['name']} ! (id={data['id']})"
+    async with SessionLocal() as db, db.begin():
+        await create_notification(db, message)
 
 
 # Lifespan : code qui tourne au démarrage et à l'arrêt du service.
 # 1. On crée la table "notifications" dans SQLite si elle n'existe pas.
 # 2. On se connecte à NATS et on s'abonne au sujet "user.created".
-# 3. À chaque message reçu, on enregistre une ligne dans la base.
+# 3. À chaque message reçu, handle_user_created enregistre une ligne.
 # 4. À l'arrêt, on ferme proprement NATS et la base.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,19 +37,7 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
     nc = await nats.connect(settings.nats_url)
-
-    # Fonction appelée automatiquement par NATS à chaque message reçu
-    # sur le sujet "user.created". msg.data contient les bytes envoyés
-    # par hello-service (un JSON encodé en utf-8).
-    async def handle(msg):
-        data = json.loads(msg.data)
-        message = f"Bonjour {data['name']} ! (id={data['id']})"
-        async with SessionLocal() as db, db.begin():
-            await create_notification(db, message)
-
-    # On s'abonne au sujet : tout message publié sur "user.created"
-    # déclenchera la fonction handle ci-dessus.
-    await nc.subscribe("user.created", cb=handle)
+    await nc.subscribe("user.created", cb=handle_user_created)
     app.state.nats = nc
 
     try:
