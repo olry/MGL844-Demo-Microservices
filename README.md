@@ -45,6 +45,24 @@ docker compose down -v
 ```
 
 
+## Sans builder localement (option : tirer les images depuis GHCR)
+
+Les images sont publiées automatiquement sur **GitHub Container Registry**
+à chaque push sur `main`. Pour récupérer la dernière version sans builder :
+
+```
+docker compose pull
+docker compose up -d
+```
+
+Images disponibles (toutes en `:latest` et `:sha-XXXXXXX`) :
+
+* `ghcr.io/olry/mgl844-demo-microservices/gateway`
+* `ghcr.io/olry/mgl844-demo-microservices/hello-service`
+* `ghcr.io/olry/mgl844-demo-microservices/notification-service`
+* `ghcr.io/olry/mgl844-demo-microservices/frontend`
+
+
 ## URLs utiles
 
 | Service | URL |

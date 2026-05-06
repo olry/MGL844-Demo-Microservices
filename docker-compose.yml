@@ -24,6 +24,7 @@ services:
       retries: 20
 
   hello-service:
+    image: ghcr.io/olry/mgl844-demo-microservices/hello-service:latest
     build:
       context: ./backend
       dockerfile: services/hello-service/Dockerfile
@@ -45,6 +46,7 @@ services:
       retries: 20
 
   notification-service:
+    image: ghcr.io/olry/mgl844-demo-microservices/notification-service:latest
     build:
       context: ./backend
       dockerfile: services/notification-service/Dockerfile
@@ -66,6 +68,7 @@ services:
       retries: 20
 
   gateway:
+    image: ghcr.io/olry/mgl844-demo-microservices/gateway:latest
     build:
       context: ./backend
       dockerfile: gateway/Dockerfile
@@ -90,6 +93,7 @@ services:
       retries: 20
 
   frontend:
+    image: ghcr.io/olry/mgl844-demo-microservices/frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
