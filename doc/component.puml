@@ -1,0 +1,64 @@
+@startuml component
+title Diagramme de composants : MGL844 Microservices
+
+package "Frontend" {
+    [WebUI]
+}
+
+package "Gateway" {
+    [Proxy]
+}
+
+package "hello-service" {
+    package "Controllers" as HC {
+        [HealthController]
+        [UserController]
+    }
+    package "Models" as HM {
+        [User]
+    }
+    package "Views" as HV {
+        [UserCreate]
+        [UserOut]
+        [UserGreeting]
+    }
+}
+
+package "notification-service" {
+    package "Controllers" as NC {
+        [HealthController2]
+        [NotificationController]
+    }
+    package "Models" as NM {
+        [Notification]
+        [Subscriber]
+    }
+    package "Views" as NV {
+        [NotificationOut]
+    }
+}
+
+queue "NATS" as NATS
+database "hello.db" as DBH
+database "notifications.db" as DBN
+
+[WebUI] --> [Proxy] : HTTP
+
+[Proxy] --> [UserController] : /hello/users
+[Proxy] --> [NotificationController] : /notify/notifications
+
+[UserController] --> [User] : create, get, list
+[UserController] --> [UserCreate] : valide entree
+[UserController] --> [UserOut] : forme sortie
+[UserController] --> [UserGreeting] : forme sortie
+[UserController] ..> NATS : publish user.created
+
+[Subscriber] ..> NATS : subscribe user.created
+[Subscriber] --> [Notification] : create
+[NotificationController] --> [Notification] : list
+[NotificationController] --> [NotificationOut] : forme sortie
+
+[User] --> DBH
+[Notification] --> DBN
+
+@enduml

@@ -1,11 +1,22 @@
 # MGL844 : Lab Microservices
 
+[![Publish images to GHCR](https://github.com/olry/MGL844-Demo-Microservices/actions/workflows/publish.yml/badge.svg)](https://github.com/olry/MGL844-Demo-Microservices/actions/workflows/publish.yml)
+
 Projet de départ pour le cours. Il contient un *gateway*, deux services
 exemples (`hello-service` qui publie un événement, `notification-service`
 qui le consomme), [NATS](https://docs.nats.io/) (un broker de messages)
 et une petite interface web pour tester les endpoints.
 
-L'architecture complète est expliquée dans `doc/`.
+## Architecture
+
+![Composants](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/olry/MGL844-Demo-Microservices/main/doc/component.puml)
+
+Le frontend appelle le `gateway`, qui transfère vers `hello-service`
+ou `notification-service` selon le préfixe d'URL.
+`hello-service` publie l'événement `user.created` sur NATS,
+`notification-service` y est abonné et stocke chaque message reçu.
+Les autres diagrammes (cas d'usage, séquence, classes, déploiement)
+sont dans `doc/`.
 
 Technos : [FastAPI](https://fastapi.tiangolo.com/),
 [SQLAlchemy 2.0 async](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html),

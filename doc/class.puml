@@ -1,0 +1,92 @@
+@startuml class
+title Diagramme de classes : MGL844 Microservices
+left to right direction
+
+' ==== hello-service ====
+package "hello-service" {
+  class User {
+    - id : int
+    - name : str
+    - created_at : datetime
+    + greet() : str
+  }
+
+  class UserCreate <<Pydantic>> {
+    + name : str
+  }
+
+  class UserOut <<Pydantic>> {
+    + id : int
+    + name : str
+    + created_at : datetime
+  }
+
+  class UserGreeting <<Pydantic>> {
+    + id : int
+    + name : str
+    + message : str
+  }
+
+  class UserController <<Controller>> {
+    + create(payload : UserCreate) : UserOut
+    + index() : list<UserOut>
+    + show(user_id : int) : UserGreeting
+  }
+
+  class HelloLifespan {
+    + connect_nats()
+    + create_tables()
+  }
+}
+
+' ==== notification-service ====
+package "notification-service" {
+  class Notification {
+    - id : int
+    - message : str
+    - created_at : datetime
+  }
+
+  class NotificationOut <<Pydantic>> {
+    + id : int
+    + message : str
+    + created_at : datetime
+  }
+
+  class NotificationController <<Controller>> {
+    + index() : list<NotificationOut>
+  }
+
+  class NotificationLifespan {
+    + connect_nats()
+    + subscribe(user.created)
+    + handle(msg) : creates Notification
+  }
+}
+
+' ==== gateway ====
+package "gateway" {
+  class Proxy <<Controller>> {
+    - ROUTES : dict
+    + proxy(service : str, path : str) : Response
+    + health() : dict
+  }
+}
+
+' ==== Relations ====
+UserController --> User : utilise
+UserController ..> UserCreate : valide
+UserController ..> UserOut : retourne
+UserController ..> UserGreeting : retourne
+
+NotificationController --> Notification : utilise
+NotificationController ..> NotificationOut : retourne
+NotificationLifespan --> Notification : cree
+
+HelloLifespan --> User : create_all
+NotificationLifespan --> Notification : create_all
+
+Proxy ..> UserController : transfere /hello
+Proxy ..> NotificationController : transfere /notify
+
+@enduml

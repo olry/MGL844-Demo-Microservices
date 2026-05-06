@@ -1,0 +1,15 @@
+@startuml use_case
+  title Cas d'utilisation - MGL844 Microservices
+
+  actor Utilisateur
+
+  (UC-01 Creer un utilisateur) as UC01
+  (UC-02 Lister les utilisateurs) as UC02
+  (UC-03 Consulter un utilisateur) as UC03
+  (UC-04 Lister les notifications) as UC04
+
+  Utilisateur --> UC01
+  Utilisateur --> UC02
+  Utilisateur --> UC03
+  Utilisateur --> UC04
+@enduml

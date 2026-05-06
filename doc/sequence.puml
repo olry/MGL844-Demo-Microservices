@@ -1,0 +1,54 @@
+@startuml sequence
+  title Sequence : creation utilisateur et notification
+
+  skinparam participantStyle rectangle
+
+  actor       utilisateur as "utilisateur:Client"
+  participant frontend    as "frontend:WebUI"
+  participant gateway     as "gateway:APIGateway"
+  participant hello       as "hello-service:FastAPI"
+  participant nats        as "nats:MessageBroker"
+  participant notif       as "notification-service:FastAPI"
+
+  utilisateur -> frontend : saisit un nom et clique "creer"
+  activate frontend
+
+  frontend -> gateway : POST /hello/users
+  activate gateway
+
+  gateway -> hello : POST /users
+  activate hello
+
+  hello -> hello : INSERT dans table users\n(SQLite locale)
+  hello -> nats  : publish user.created\n{id, name}
+  hello --> gateway : 201 UserOut
+  deactivate hello
+
+  gateway --> frontend : 201 UserOut
+  deactivate gateway
+
+  frontend --> utilisateur : affiche l'utilisateur cree
+  deactivate frontend
+
+  == Reaction asynchrone ==
+
+  nats -> notif : message user.created
+  activate notif
+  notif -> notif : INSERT dans table notifications\n(SQLite locale)
+  deactivate notif
+
+  == Lecture des notifications ==
+
+  utilisateur -> frontend : ouvre la liste des notifications
+  activate frontend
+  frontend -> gateway : GET /notify/notifications
+  activate gateway
+  gateway -> notif : GET /notifications
+  activate notif
+  notif --> gateway : 200 [NotificationOut]
+  deactivate notif
+  gateway --> frontend : 200 [NotificationOut]
+  deactivate gateway
+  frontend --> utilisateur : affiche la liste
+  deactivate frontend
+@enduml

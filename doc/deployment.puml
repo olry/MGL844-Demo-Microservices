@@ -1,0 +1,49 @@
+@startuml deployment
+title Diagramme de deploiement : MGL844 Microservices
+
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 60
+
+rectangle "Hote Docker (docker-compose)" as Host {
+
+  node "frontend\n(port 3000)" as Frontend {
+    [nginx]
+  }
+
+  node "gateway\n(port 8000)" as Gateway {
+    [FastAPI Proxy]
+  }
+
+  node "hello-service\n(port 8001)" as Hello {
+    [FastAPI hello]
+  }
+
+  node "notification-service\n(port 8002)" as Notif {
+    [FastAPI notification]
+  }
+
+  queue "nats\n(port 4222, monitor 8222)" as NATS
+
+  database "hello_data\n(volume)\nSQLite hello.db" as DBH
+  database "notif_data\n(volume)\nSQLite notifications.db" as DBN
+}
+
+' === Layout ===
+Frontend -[hidden]right- Gateway
+Gateway  -[hidden]right- Hello
+Hello    -[hidden]right- Notif
+
+' === Connexions ===
+Frontend --> Gateway : HTTP
+
+Gateway --> Hello : HTTP /hello/*
+Gateway --> Notif : HTTP /notify/*
+
+Hello ..> NATS  : publish user.created
+Notif ..> NATS  : subscribe user.created
+
+Hello --> DBH
+Notif --> DBN
+
+@enduml
