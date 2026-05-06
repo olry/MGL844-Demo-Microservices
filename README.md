@@ -56,11 +56,63 @@ docker compose down -v
 ```
 
 
-## Sans builder localement (option : tirer les images depuis GHCR)
+## Lancer sans cloner le repo (images depuis GHCR)
 
-Les images sont publiées automatiquement sur **GitHub Container Registry**
-à chaque push sur `main`. Pour récupérer la dernière version sans builder :
+Si tu veux juste essayer l'application sans télécharger tout le code source,
+il te suffit de **deux fichiers** : `docker-compose.yml` et `.env`. Les
+images sont déjà publiées sur **GitHub Container Registry** à chaque push
+sur `main`.
 
+**Étape 1 : créer un dossier vide pour le projet**
+
+**Windows (PowerShell)**
+```powershell
+mkdir mgl844-demo
+cd mgl844-demo
+```
+
+**macOS / Linux**
+```bash
+mkdir mgl844-demo
+cd mgl844-demo
+```
+
+**Étape 2 : télécharger les deux fichiers**
+
+**Windows (PowerShell)**
+```powershell
+curl.exe -O https://raw.githubusercontent.com/olry/MGL844-Demo-Microservices/main/docker-compose.yml
+curl.exe -O https://raw.githubusercontent.com/olry/MGL844-Demo-Microservices/main/.env.example
+copy .env.example .env
+```
+
+**macOS / Linux**
+```bash
+curl -O https://raw.githubusercontent.com/olry/MGL844-Demo-Microservices/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/olry/MGL844-Demo-Microservices/main/.env.example
+cp .env.example .env
+```
+
+**Étape 3 : tirer les images puis démarrer**
+
+```
+docker compose pull
+docker compose up -d
+```
+
+Attendre 15 secondes puis ouvrir <http://localhost:3000>.
+
+**Pour arrêter** :
+```
+docker compose down
+```
+
+**Pour arrêter ET vider les bases de données** :
+```
+docker compose down -v
+```
+
+**Pour mettre à jour vers la dernière version publiée** :
 ```
 docker compose pull
 docker compose up -d
@@ -72,6 +124,14 @@ Images disponibles (toutes en `:latest` et `:sha-XXXXXXX`) :
 * `ghcr.io/olry/mgl844-demo-microservices/hello-service`
 * `ghcr.io/olry/mgl844-demo-microservices/notification-service`
 * `ghcr.io/olry/mgl844-demo-microservices/frontend`
+
+> **Pourquoi ça marche sans le code source ?**
+> Le fichier `docker-compose.yml` contient deux infos pour chaque service :
+> `image:` (où aller chercher l'image sur GHCR) et `build:` (comment la
+> builder localement). `docker compose pull` lit seulement `image:` et tire
+> depuis GHCR. Comme les images existent ensuite en local, `docker compose
+> up` ne touche jamais à `build:`, donc pas besoin des dossiers `backend/`
+> et `frontend/`.
 
 
 ## URLs utiles
