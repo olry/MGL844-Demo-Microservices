@@ -146,7 +146,7 @@ Le rapport de couverture s'affiche automatiquement après les tests unitaires.
 | Erreur | Cause | Solution |
 |--------|-------|----------|
 | `error while interpolating ... must be set in .env` | pas de fichier `.env` | refaire `copy .env.example .env` (Windows) ou `cp .env.example .env` (macOS/Linux) |
-| `Bind for 0.0.0.0:8000 failed` | port 8000 déjà pris | changer `GATEWAY_PORT` dans `.env` |
+| `Bind for 0.0.0.0:8000 failed` | port 8000 déjà pris | changer `GATEWAY_PORT` dans `.env` ET la constante `GATEWAY` dans `frontend/app.js` |
 | Port 3000 déjà pris | autre app utilise 3000 | changer `FRONTEND_PORT` dans `.env` |
 | `nats` reste `unhealthy` | port 4222 déjà pris | redémarrer Docker Desktop, vérifier qu'aucun autre NATS ne tourne |
 | L'interface web n'affiche rien | conteneurs pas encore prêts | attendre 15 s, puis `docker compose ps` (tout doit être `healthy`) |

@@ -1,6 +1,6 @@
-// L'URL du gateway est injectée par config.js, généré au démarrage
-// du conteneur depuis le .env à la racine. Voir config.template.js.
-const GATEWAY = window.GATEWAY;
+// URL du gateway. Tous les appels passent par le port 8000.
+// Si tu changes GATEWAY_PORT dans .env, change aussi cette ligne.
+const GATEWAY = "http://localhost:8000";
 
 
 // Fonction utilitaire : appelle un endpoint GET et affiche la réponse.
