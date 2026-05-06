@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>MGL844 - Démo Microservices</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>MGL844 - Démo Microservices</h1>
+  <p>Interface simple pour tester les endpoints du gateway. Tous les appels
+  passent par <code>http://localhost:8000</code>.</p>
+
+  <!-- Santé des services : on vérifie que les routes /health répondent. -->
+  <section>
+    <h2>Santé des services</h2>
+    <button onclick="callApi('/hello/health', 'health-out')">GET /hello/health</button>
+    <button onclick="callApi('/notify/health', 'health-out')">GET /notify/health</button>
+    <pre id="health-out"></pre>
+  </section>
+
+  <!-- Création d'un utilisateur : POST avec un corps JSON. -->
+  <section>
+    <h2>Créer un utilisateur</h2>
+    <input id="user-name" placeholder="Nom" />
+    <button onclick="createUser()">POST /hello/users</button>
+    <pre id="create-out"></pre>
+  </section>
+
+  <!-- Liste de tous les utilisateurs. -->
+  <section>
+    <h2>Lister les utilisateurs</h2>
+    <button onclick="callApi('/hello/users', 'list-out')">GET /hello/users</button>
+    <pre id="list-out"></pre>
+  </section>
+
+  <!-- Récupérer un utilisateur par son id. -->
+  <section>
+    <h2>Récupérer un utilisateur par ID</h2>
+    <input id="user-id" type="number" placeholder="id" />
+    <button onclick="getUser()">GET /hello/users/{id}</button>
+    <pre id="get-out"></pre>
+  </section>
+
+  <!-- Notifications déclenchées par l'événement user.created. -->
+  <section>
+    <h2>Lister les notifications</h2>
+    <button onclick="callApi('/notify/notifications', 'notif-out')">GET /notify/notifications</button>
+    <pre id="notif-out"></pre>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

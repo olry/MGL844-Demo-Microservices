@@ -1,0 +1,35 @@
+@startuml 08-state-auction
+title Auction Lifecycle
+
+skinparam state {
+  BackgroundColor #E3F2FD
+  BorderColor    #1976D2
+  ArrowColor     #455A64
+}
+
+[*] --> open : POST /auctions\nemits AuctionCreated → locks product
+
+state open {
+  open : Buyers may place bids
+  open : current_best_bid updated on each BidPlaced
+}
+
+open   --> accepted  : auction-closer task\nends_at < NOW()\nemits AuctionAccepted (cid=NEW)
+open   --> cancelled : seller cancels (rare)\nemits AuctionCancelled
+
+state accepted {
+  accepted : Saga in flight\nwaiting for OrderCreated
+}
+
+accepted --> closed : consumes OrderCreated\nemits AuctionClosed → unlocks product
+accepted --> open   : consumes WalletDebitFailed\nor OrderCreationFailed\n(back on the market)
+
+cancelled --> [*] : emits AuctionCancelled → unlocks product
+closed    --> [*]
+
+note right of accepted
+  The "accepted" state is the saga window.
+  If nothing resolves it within the timeout,
+  the wallet refund task forces back to "open".
+end note
+@enduml

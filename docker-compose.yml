@@ -1,0 +1,103 @@
+networks:
+  microclass:
+    driver: bridge
+
+volumes:
+  hello_data:
+  notif_data:
+
+services:
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats
+    command:
+      - "--http_port=8222"
+    ports:
+      - "${NATS_PORT:?must be set in .env}:4222"
+      - "${NATS_MONITOR_PORT:?must be set in .env}:8222"
+    networks:
+      - microclass
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8222/healthz | grep -q '\"status\":\"ok\"'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  hello-service:
+    build:
+      context: ./backend
+      dockerfile: services/hello-service/Dockerfile
+    container_name: hello-service
+    env_file: .env
+    ports:
+      - "${HELLO_SERVICE_PORT:?must be set in .env}:8001"
+    volumes:
+      - hello_data:/data
+    networks:
+      - microclass
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: services/notification-service/Dockerfile
+    container_name: notification-service
+    env_file: .env
+    ports:
+      - "${NOTIFY_SERVICE_PORT:?must be set in .env}:8002"
+    volumes:
+      - notif_data:/data
+    networks:
+      - microclass
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8002/health').status==200 else 1)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: gateway/Dockerfile
+    container_name: gateway
+    env_file: .env
+    environment:
+      HELLO_SERVICE_URL: "${HELLO_SERVICE_URL:?must be set in .env}"
+      NOTIFY_SERVICE_URL: "${NOTIFY_SERVICE_URL:?must be set in .env}"
+    ports:
+      - "${GATEWAY_PORT:?must be set in .env}:8000"
+    networks:
+      - microclass
+    depends_on:
+      hello-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/hello/health').status==200 else 1)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "${FRONTEND_PORT:?must be set in .env}:80"
+    networks:
+      - microclass
+    depends_on:
+      gateway:
+        condition: service_healthy

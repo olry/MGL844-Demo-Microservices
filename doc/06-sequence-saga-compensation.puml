@@ -1,0 +1,45 @@
+@startuml 06-sequence-saga-compensation
+title Saga — Compensation Paths
+caption Two failure modes: (A) wallet debit fails, (B) order creation fails
+
+skinparam sequence {
+  ArrowColor #B71C1C
+  ParticipantBackgroundColor #FFEBEE
+  ParticipantBorderColor #B71C1C
+  QueueBackgroundColor #ECEFF1
+}
+
+participant "AuctionsService"   as auctions
+queue      "subject: auction.>" as s_auction
+participant "WalletService"     as wallet
+queue      "subject: wallet.>"  as s_wallet
+participant "OrdersService"     as orders
+queue      "subject: order.>"   as s_order
+
+== A. Insufficient funds ==
+auctions -> s_auction : publish auction.accepted{cid}
+s_auction -> wallet  : subscribe
+wallet -> wallet : balance < amount
+wallet -> s_wallet : publish wallet.debit_failed{cid, reason}
+s_wallet -> auctions : subscribe
+auctions -> auctions : status = 'open'\n(back on the market, no debit to refund)
+
+== B. Order creation fails ==
+auctions -> s_auction : publish auction.accepted{cid}
+s_auction -> wallet  : subscribe
+wallet -> s_wallet   : publish wallet.debited{cid}
+s_wallet -> orders   : subscribe
+orders -> orders     : INSERT orders failed\n(unique violation, DB down, ...)
+orders -> s_order    : publish order.failed{cid, reason}
+s_order -> wallet    : subscribe → refund
+wallet -> wallet     : balance += amount\nledger insert
+wallet -> s_wallet   : publish wallet.refunded{cid}
+s_order -> auctions  : subscribe → reopen
+auctions -> auctions : status = 'open'
+
+note over auctions, orders
+  correlation_id (cid) flows through every message in the saga.
+  Each subscriber checks an idempotency table on the consumer side
+  before applying the side effect.
+end note
+@enduml

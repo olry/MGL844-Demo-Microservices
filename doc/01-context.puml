@@ -1,0 +1,20 @@
+@startuml 01-context
+title System Context — Universal Marketplace (teaching edition)
+
+skinparam rectangle {
+  BackgroundColor #E3F2FD
+  BorderColor    #1976D2
+}
+skinparam actor {
+  BackgroundColor #FFF8E1
+  BorderColor    #455A64
+}
+
+actor "Buyer"  as buyer
+actor "Seller" as seller
+
+rectangle "Marketplace Platform\n(5 FastAPI microservices\nbehind a thin gateway,\ncommunicating over HTTP and NATS)" as system
+
+buyer  --> system : HTTPS\n(browse, bid, view orders)
+seller --> system : HTTPS\n(manage products, ship orders)
+@enduml

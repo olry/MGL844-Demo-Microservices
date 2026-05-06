@@ -1,0 +1,34 @@
+@startuml 02-container-starter
+title Starter — what is in the repo today
+
+skinparam rectangle {
+  BackgroundColor<<svc>>  #E3F2FD
+  BorderColor<<svc>>      #1976D2
+  BackgroundColor<<infra>> #FFF8E1
+  BorderColor<<infra>>     #F57F17
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor    #F57F17
+}
+skinparam actor {
+  BackgroundColor #ECEFF1
+  BorderColor    #455A64
+}
+
+actor "Student" as user
+
+rectangle "Docker Compose : microclass" {
+  rectangle "gateway\nFastAPI + httpx\n:8000"            <<svc>>   as gw
+  rectangle "hello-service\nFastAPI + SQLAlchemy 2.0\n:8001" <<svc>>   as hello
+  database  "hello.db\n(SQLite, volume hello_data)"                  as db
+  rectangle "NATS\n:4222 (client)\n:8222 (monitoring)"   <<infra>> as nats
+}
+
+user --> gw     : HTTP
+user --> nats   : HTTP monitoring
+
+gw    --> hello : proxies /hello/*
+hello --> db    : ORM async (aiosqlite)
+hello --> nats  : nats-py client (lifespan)
+@enduml

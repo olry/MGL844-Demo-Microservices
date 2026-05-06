@@ -1,0 +1,46 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 800px;
+  margin: 2em auto;
+  padding: 0 1em;
+  color: #222;
+  line-height: 1.4;
+}
+
+section {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+section h2 {
+  margin-top: 0;
+  font-size: 1.1em;
+}
+
+button {
+  padding: 0.4em 0.8em;
+  margin-right: 0.3em;
+  cursor: pointer;
+}
+
+input {
+  padding: 0.3em;
+  margin-right: 0.3em;
+}
+
+pre {
+  background: #f4f4f4;
+  padding: 0.6em;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  min-height: 1em;
+}
+
+code {
+  background: #f4f4f4;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}

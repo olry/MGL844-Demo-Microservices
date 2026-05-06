@@ -1,0 +1,50 @@
+@startuml 05-sequence-saga-happy
+title Saga — Happy Path
+caption Auction expires → wallet debited → order created → auction closed
+
+skinparam sequence {
+  ArrowColor #455A64
+  ParticipantBackgroundColor #E3F2FD
+  ParticipantBorderColor #1976D2
+  DatabaseBackgroundColor #FFF8E1
+  QueueBackgroundColor #ECEFF1
+}
+
+participant "Auction-closer\n(background task)" as closer
+database   "auctions DB"        as adb
+participant "AuctionsService"   as auctions
+queue      "subject: auction.>" as s_auction
+participant "WalletService"     as wallet
+database   "wallets DB"         as wdb
+queue      "subject: wallet.>"  as s_wallet
+participant "OrdersService"     as orders
+database   "orders DB"          as odb
+queue      "subject: order.>"   as s_order
+
+== Step 1 — auction expires ==
+closer -> adb     : SELECT auctions WHERE\nstatus='open' AND ends_at < NOW()
+closer -> auctions : mark accepted (winner = best bidder)
+auctions -> adb : UPDATE auction.status='accepted'
+auctions -> s_auction : publish auction.accepted
+
+== Step 2 — wallet debit ==
+s_auction -> wallet : subscribe auction.accepted
+wallet -> wdb : balance -= amount\nINSERT ledger
+wallet -> s_wallet : publish wallet.debited
+
+== Step 3 — order create ==
+s_wallet -> orders : subscribe wallet.debited
+orders -> odb : INSERT orders
+orders -> s_order : publish order.created
+
+== Step 4 — auction close ==
+s_order -> auctions : subscribe order.created
+auctions -> adb : UPDATE auction.status='closed'
+auctions -> s_auction : publish auction.closed
+
+note over closer, s_order
+  Each message carries a correlation_id (set in step 1, propagated through).
+  Subjects use NATS dot-notation; subscribers can listen to wildcards
+  like "auction.>" to receive every auction.* message.
+end note
+@enduml
