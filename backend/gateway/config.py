@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # URL interne (dans le réseau Docker) du service notification.
     notify_service_url: str
 
+    # URL interne (dans le réseau Docker) du service d'authentification.
+    auth_service_url: str
+
 
 # On crée l'objet settings dès l'import du module.
 # Si une variable manque, pydantic lève une erreur tout de suite

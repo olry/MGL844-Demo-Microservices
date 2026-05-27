@@ -19,6 +19,7 @@ from config import settings
 ROUTES: dict[str, str] = {
     "hello": settings.hello_service_url,
     "notify": settings.notify_service_url,
+    "auth": settings.auth_service_url,
 }
 
 
