@@ -3,6 +3,8 @@
 # Le gateway regarde le premier mot de l'URL (par exemple /hello/...)
 # et transfère la requête au bon service interne dans le réseau Docker.
 
+import logging
+import socket
 from contextlib import asynccontextmanager
 
 import httpx
@@ -10,6 +12,14 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
+
+# On affiche les logs en INFO pour voir quelle instance repond (load balancing).
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("gateway")
+
+# Nom d'hote du conteneur. Avec 3 replicas, chaque instance a un nom different
+# (gateway-1, gateway-2, gateway-3). C'est ce nom qui prouve le round-robin.
+HOSTNAME = socket.gethostname()
 
 
 # Table des services connus.
@@ -59,7 +69,15 @@ app.add_middleware(
 # Docker appelle cette route pour vérifier que le gateway tourne bien.
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "name": "gateway"}
+    return {"status": "ok", "name": "gateway", "host": HOSTNAME}
+
+
+# Route de demonstration du LOAD BALANCING (seance 8).
+# A travers nginx : GET /api/whoami. nginx repartit l'appel sur l'une des 3
+# instances de gateway ; le nom d'hote renvoye change d'un appel a l'autre.
+@app.get("/whoami")
+async def whoami() -> dict[str, str]:
+    return {"gateway_host": HOSTNAME}
 
 
 # Route générique qui transfère TOUTES les requêtes vers le bon service.
@@ -95,6 +113,11 @@ async def proxy(service: str, path: str, request: Request) -> Response:
 
     # On filtre les en-têtes techniques de la réponse avant de la renvoyer.
     out_headers = {k: v for k, v in resp.headers.items() if k.lower() not in _HOP_BY_HOP}
+
+    # On marque quelle instance de gateway a traité la requête. Visible avec
+    # `curl -i`, cet en-tête rend le load balancing observable (seance 8).
+    out_headers["X-Gateway-Host"] = HOSTNAME
+    logger.info("proxy host=%s %s /%s/%s", HOSTNAME, request.method, service, path)
 
     # On renvoie la réponse du service interne au client, telle quelle.
     return Response(content=resp.content, status_code=resp.status_code, headers=out_headers)

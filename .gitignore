@@ -19,3 +19,6 @@ coverage.xml
 .coverage
 .claude
 .localdocs/
+# Certificats TLS de demo (generes par cert-init / scripts/gen-certs).
+nginx/certs/*.crt
+nginx/certs/*.key

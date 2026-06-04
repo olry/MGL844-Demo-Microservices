@@ -6,8 +6,12 @@ volumes:
   hello_data:
   notif_data:
   auth_data:
+  redis_data:
 
 services:
+  # ===========================================================================
+  #  NATS : le broker de messages (communication asynchrone pub/sub, seance 7).
+  # ===========================================================================
   nats:
     image: nats:2.10-alpine
     container_name: nats
@@ -25,6 +29,77 @@ services:
       retries: 30
       start_period: 5s
 
+  # ===========================================================================
+  #  REDIS : cache PARTAGE entre instances (seance 8).
+  #  Comme la gateway tourne en plusieurs replicas et que les services sont
+  #  sans etat, tout cache doit vivre hors des instances : ici, dans Redis.
+  #  Pas de port publie : seuls les services internes y accedent.
+  # ===========================================================================
+  redis:
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - microclass
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 3s
+
+  # ===========================================================================
+  #  CERT-INIT : genere une seule fois le certificat TLS auto-signe du labo
+  #  (CN=localhost) s'il n'existe pas encore, puis s'arrete. nginx attend que
+  #  ce conteneur ait termine avant de demarrer. Evite de versionner une cle
+  #  privee dans le depot. En production : Let's Encrypt, jamais d'auto-signe.
+  # ===========================================================================
+  cert-init:
+    image: alpine/openssl
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        test -f /certs/server.crt ||
+        openssl req -x509 -newkey rsa:2048 -nodes -days 825
+        -keyout /certs/server.key -out /certs/server.crt -subj "/CN=localhost"
+    volumes:
+      - ./nginx/certs:/certs
+
+  # ===========================================================================
+  #  NGINX : la porte d'entree (reverse proxy / edge). SEUL conteneur expose.
+  #  Roles : load balancing sur les 3 gateways, frontend statique, TLS,
+  #  rate limiting. Toute sa logique est dans nginx/nginx.conf.
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - microclass
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:80/healthz | grep -q ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # ===========================================================================
+  #  HELLO-SERVICE : service metier d'exemple (utilisateurs).
+  #  Producteur de l'evenement user.created (seance 7) et, depuis la seance 8,
+  #  il met en CACHE dans Redis la lecture GET /users/{id}.
+  # ===========================================================================
   hello-service:
     image: ghcr.io/olry/mgl844-demo-microservices/hello-service:latest
     build:
@@ -40,6 +115,8 @@ services:
       - microclass
     depends_on:
       nats:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)\""]
@@ -91,21 +168,27 @@ services:
       retries: 30
       start_period: 10s
 
+  # ===========================================================================
+  #  GATEWAY : routeur applicatif (FastAPI). MIS A L'ECHELLE EN 3 INSTANCES
+  #  (deploy.replicas) pour demontrer le load balancing de nginx (seance 8).
+  #  Plus de container_name ni de port publie : on n'y accede QUE par nginx.
+  #  Docker cree gateway-1, gateway-2, gateway-3 ; le DNS interne "gateway"
+  #  renvoie les 3 adresses et nginx les equilibre en round-robin.
+  # ===========================================================================
   gateway:
     image: ghcr.io/olry/mgl844-demo-microservices/gateway:latest
     build:
       context: ./backend
       dockerfile: gateway/Dockerfile
-    container_name: gateway
     env_file: .env
     environment:
       HELLO_SERVICE_URL: "${HELLO_SERVICE_URL:?must be set in .env}"
       NOTIFY_SERVICE_URL: "${NOTIFY_SERVICE_URL:?must be set in .env}"
       AUTH_SERVICE_URL: "${AUTH_SERVICE_URL:?must be set in .env}"
-    ports:
-      - "${GATEWAY_PORT:?must be set in .env}:8000"
     networks:
       - microclass
+    deploy:
+      replicas: 3
     depends_on:
       hello-service:
         condition: service_healthy
@@ -114,28 +197,8 @@ services:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/hello/health').status==200 else 1)\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
       interval: 2s
       timeout: 5s
       retries: 30
       start_period: 10s
-
-  frontend:
-    image: ghcr.io/olry/mgl844-demo-microservices/frontend:latest
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "${FRONTEND_PORT:?must be set in .env}:80"
-    networks:
-      - microclass
-    depends_on:
-      gateway:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:80/ > /dev/null"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-      start_period: 5s

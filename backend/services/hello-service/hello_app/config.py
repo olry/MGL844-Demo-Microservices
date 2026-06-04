@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # Adresse du serveur NATS dans le réseau Docker.
     nats_url: str
 
+    # Adresse de Redis (cache partagé entre instances, séance 8).
+    redis_url: str
+
 
 # pydantic lit les variables d'environnement et lève une erreur
 # tout de suite si une variable obligatoire manque.

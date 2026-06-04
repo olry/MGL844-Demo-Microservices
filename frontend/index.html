@@ -7,8 +7,18 @@
 </head>
 <body>
   <h1>MGL844 - Démo Microservices</h1>
-  <p>Interface simple pour tester les endpoints du gateway. Tous les appels
-  passent par <code>http://localhost:8000</code>.</p>
+  <p>Cette page est servie par <strong>nginx</strong> (la porte d'entrée) en
+  HTTPS. Tous les appels passent par le même domaine sous <code>/api</code> :
+  nginx les répartit (load balancing) sur les trois instances de la gateway.</p>
+
+  <!-- Démo du load balancing : voir la gateway changer d'un appel à l'autre. -->
+  <section>
+    <h2>Load balancing (séance 8)</h2>
+    <p>Six appels à <code>/api/whoami</code> : le nom de la gateway qui répond
+    change à chaque appel (round-robin sur les 3 instances).</p>
+    <button onclick="whoAmI()">Quelle gateway me répond ?</button>
+    <pre id="lb-out"></pre>
+  </section>
 
   <!-- Santé des services : on vérifie que les routes /health répondent. -->
   <section>
