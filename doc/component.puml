@@ -1,11 +1,15 @@
 @startuml component
-title Diagramme de composants : MGL844 Microservices
+title Diagramme de composants : MGL844 Microservices (seance 8)
+
+package "Edge" {
+    [Nginx]
+}
 
 package "Frontend" {
     [WebUI]
 }
 
-package "Gateway" {
+package "Gateway (x3 replicas)" {
     [Proxy]
 }
 
@@ -40,10 +44,14 @@ package "notification-service" {
 }
 
 queue "NATS" as NATS
+database "Redis\n(cache partage)" as REDIS
 database "hello.db" as DBH
 database "notifications.db" as DBN
 
-[WebUI] --> [Proxy] : HTTP
+' Nginx est la porte d'entree : il sert le frontend statique et proxifie /api.
+[Nginx] --> [WebUI] : sert le statique (HTTPS)
+[WebUI] --> [Nginx] : appels /api/*
+[Nginx] --> [Proxy] : load balancing (round-robin sur 3 instances)
 
 [Proxy] --> [UserController] : /hello/*
 [Proxy] --> [NotificationController] : /notify/*
@@ -54,6 +62,7 @@ database "notifications.db" as DBN
 [UserController] --> [UserCreate] : valide entree
 [UserController] --> [UserOut] : forme sortie
 [UserController] --> [UserGreeting] : forme sortie
+[UserController] --> REDIS : cache user:{id} (TTL 60s)
 [UserController] ..> NATS : publish user.created
 
 [NotificationLifespan] ..> NATS : subscribe user.created

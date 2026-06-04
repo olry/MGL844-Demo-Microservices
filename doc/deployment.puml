@@ -1,17 +1,19 @@
 @startuml deployment
-title Diagramme de deploiement : MGL844 Microservices
+title Diagramme de deploiement : MGL844 Microservices (seance 8)
 
 left to right direction
 skinparam nodesep 30
 skinparam ranksep 60
 
+actor "Navigateur" as Browser
+
 rectangle "Hote Docker (docker-compose)" as Host {
 
-  node "frontend\n(host 3000 -> 80)" as Frontend {
-    [nginx]
+  node "nginx (edge)\n(host 80 -> 80, 443 -> 443)\nTLS, frontend statique,\nrate limiting, load balancing" as Nginx {
+    [reverse proxy]
   }
 
-  node "gateway\n(host 8000 -> 8000)" as Gateway {
+  node "gateway x3\n(replicas, aucun port expose)" as Gateway {
     [FastAPI Proxy]
   }
 
@@ -23,27 +25,39 @@ rectangle "Hote Docker (docker-compose)" as Host {
     [FastAPI notification]
   }
 
+  node "auth-service\n(host 8003 -> 8003)" as Auth {
+    [FastAPI auth]
+  }
+
   queue "nats\n(host 4222 -> 4222, monitor 8222)" as NATS
+  database "redis\n(cache partage)" as Redis
 
   database "hello_data\n(volume)\nSQLite hello.db" as DBH
   database "notif_data\n(volume)\nSQLite notifications.db" as DBN
+  database "auth_data\n(volume)\nSQLite auth.db" as DBA
 }
 
 ' === Layout ===
-Frontend -[hidden]right- Gateway
-Gateway  -[hidden]right- Hello
-Hello    -[hidden]right- Notif
+Nginx   -[hidden]right- Gateway
+Gateway -[hidden]right- Hello
+Hello   -[hidden]right- Notif
+Notif   -[hidden]right- Auth
 
 ' === Connexions ===
-Frontend --> Gateway : HTTP
+Browser --> Nginx : HTTPS
+
+Nginx --> Gateway : HTTP /api/*\n(round-robin sur 3 instances)
 
 Gateway --> Hello : HTTP /hello/*
 Gateway --> Notif : HTTP /notify/*
+Gateway --> Auth  : HTTP /auth/*
 
 Hello ..> NATS  : publish user.created
 Notif ..> NATS  : subscribe user.created
 
+Hello --> Redis : cache user:{id}\n(TTL 60s)
 Hello --> DBH
 Notif --> DBN
+Auth  --> DBA
 
 @enduml
