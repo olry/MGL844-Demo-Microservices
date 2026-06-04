@@ -11,7 +11,9 @@ et une petite interface web pour tester les endpoints.
 
 ## Architecture
 
-![Composants](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/olry/MGL844-Demo-Microservices/main/doc/component.puml)
+![Composants](doc/component.png)
+
+![Déploiement](doc/deployment.png)
 
 Depuis la séance 8, **nginx** est la seule porte exposée. Il termine le TLS
 (HTTPS), sert le frontend statique, limite le débit (rate limiting) et
